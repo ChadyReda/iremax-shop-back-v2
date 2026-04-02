@@ -35,11 +35,6 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser())
 
-// Health check
-app.get("/health", (req, res) => {
-  res.json({ success: true, message: 'Server is Healthy' })
-})
-
 // Static files (uploads) - skip directory creation logic on Vercel (read-only)
 if (!process.env.VERCEL) {
   const uploadPath = path.join(process.cwd(), config.uploadDir)

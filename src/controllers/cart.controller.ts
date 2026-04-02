@@ -4,9 +4,9 @@ import * as cartService from '../services/cart.service'
 import { AuthRequest } from '../types'
 
 const addItemSchema = z.object({
-  productId:  z.string().min(1),
+  productId: z.string().min(1),
   variantSku: z.string().min(1),
-  quantity:   z.coerce.number().int().min(1).default(1),
+  quantity: z.coerce.number().int().min(1).default(1),
 })
 
 const updateSchema = z.object({
@@ -43,7 +43,7 @@ export async function updateItem(
   const { quantity } = updateSchema.parse(req.body)
   const cart = await cartService.updateItem(
     req.user!.userId,
-    req.params.sku,
+    req.params.sku as string,
     quantity
   )
   res.json({ success: true, data: cart })
@@ -55,7 +55,7 @@ export async function removeItem(
 ): Promise<void> {
   const cart = await cartService.removeItem(
     req.user!.userId,
-    req.params.sku
+    req.params.sku as string
   )
   res.json({ success: true, data: cart })
 }

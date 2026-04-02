@@ -7,11 +7,11 @@ import { parsePage, paginate } from '../utils/pagination'
 
 export async function getDashboardStats(
   _req: AuthRequest,
-  res:  Response
+  res: Response
 ): Promise<void> {
-  const now           = new Date()
+  const now = new Date()
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const sevenDaysAgo  = new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const [
     totalUsers,
@@ -29,17 +29,17 @@ export async function getDashboardStats(
     prisma.product.count({ where: { isActive: true } }),
     prisma.order.count(),
     prisma.order.aggregate({
-      where:   { paymentStatus: 'PAID' },
-      _sum:    { total: true },
+      where: { paymentStatus: 'PAID' },
+      _sum: { total: true },
     }),
     prisma.order.aggregate({
-      where:   { paymentStatus: 'PAID', createdAt: { gte: thirtyDaysAgo } },
-      _sum:    { total: true },
+      where: { paymentStatus: 'PAID', createdAt: { gte: thirtyDaysAgo } },
+      _sum: { total: true },
     }),
     prisma.order.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
     prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
-      take:    5,
+      take: 5,
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
         shippingAddress: true,
@@ -47,13 +47,13 @@ export async function getDashboardStats(
       },
     }),
     prisma.product.findMany({
-      where:   { isActive: true },
+      where: { isActive: true },
       orderBy: { totalSold: 'desc' },
-      take:    5,
+      take: 5,
       include: { images: true },
     }),
     prisma.order.groupBy({
-      by:    ['status'],
+      by: ['status'],
       _count: { status: true },
     }),
     prisma.product.findMany({
@@ -62,7 +62,7 @@ export async function getDashboardStats(
         variants: { some: { stock: { lte: 5 } } },
       },
       include: { variants: true, images: true },
-      take:    10,
+      take: 10,
     }),
   ])
 
@@ -73,7 +73,7 @@ export async function getDashboardStats(
         totalUsers,
         totalProducts,
         totalOrders,
-        totalRevenue:   Number(revenueResult._sum.total       || 0),
+        totalRevenue: Number(revenueResult._sum.total || 0),
         monthlyRevenue: Number(monthlyRevenueResult._sum.total || 0),
         weeklyOrders,
       },
@@ -101,9 +101,9 @@ export async function listUsers(
   const where: any = {}
   if (search) {
     where.OR = [
-      { email:     { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
       { firstName: { contains: search, mode: 'insensitive' } },
-      { lastName:  { contains: search, mode: 'insensitive' } },
+      { lastName: { contains: search, mode: 'insensitive' } },
     ]
   }
 
@@ -112,7 +112,7 @@ export async function listUsers(
       where,
       orderBy: { createdAt: 'desc' },
       skip,
-      take:    limit,
+      take: limit,
     }),
     prisma.user.count({ where }),
   ])
@@ -133,8 +133,8 @@ export async function updateUserRole(
   }
 
   const user = await prisma.user.update({
-    where: { id: req.params.id },
-    data:  { role },
+    where: { id: req.params.id as string },
+    data: { role },
   })
   if (!user) throw notFound('User')
   res.json({ success: true, data: user })
@@ -153,8 +153,8 @@ export async function updateUserStatus(
   }
 
   const user = await prisma.user.update({
-    where: { id: req.params.id },
-    data:  { isActive },
+    where: { id: req.params.id as string },
+    data: { isActive },
   })
   if (!user) throw notFound('User')
   res.json({ success: true, data: user })

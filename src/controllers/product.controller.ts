@@ -6,34 +6,34 @@ import path from 'path'
 import { AppError } from '../utils/AppError'
 
 const variantSchema = z.object({
-  sku:            z.string().min(1),
-  size:           z.string().optional(),
-  color:          z.string().optional(),
-  colorHex:       z.string().optional(),
-  stock:          z.number().int().min(0),
+  sku: z.string().min(1),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  colorHex: z.string().optional(),
+  stock: z.number().int().min(0),
   additionalPrice: z.number().min(0).default(0),
 })
 
 const productSchema = z.object({
-  name:             z.string().min(2).max(200),
-  sku:              z.string().optional(),
-  description:      z.string().min(10),
+  name: z.string().min(2).max(200),
+  sku: z.string().optional(),
+  description: z.string().min(10),
   shortDescription: z.string().min(5).max(500),
-  categoryId:       z.string().min(1, 'Category is required'),
-  brand:            z.string().optional(),
-  price:            z.number().positive(),
-  compareAtPrice:   z.number().positive().optional(),
-  variants:         z.array(variantSchema).min(1),
-  images:           z.array(z.object({
-    url:       z.string(),
-    alt:       z.string().default(''),
+  categoryId: z.string().min(1, 'Category is required'),
+  brand: z.string().optional(),
+  price: z.number().positive(),
+  compareAtPrice: z.number().positive().optional(),
+  variants: z.array(variantSchema).min(1),
+  images: z.array(z.object({
+    url: z.string(),
+    alt: z.string().default(''),
     isPrimary: z.boolean().default(false),
     sortOrder: z.number().default(0),
   })).default([]),
-  tags:             z.array(z.string()).default([]),
-  isFeatured:       z.boolean().default(false),
-  isNewArrival:     z.boolean().default(true),
-  isActive:         z.boolean().default(true),
+  tags: z.array(z.string()).default([]),
+  isFeatured: z.boolean().default(false),
+  isNewArrival: z.boolean().default(true),
+  isActive: z.boolean().default(true),
 })
 
 export async function list(
@@ -48,7 +48,7 @@ export async function getOne(
   req: Request,
   res: Response
 ): Promise<void> {
-  const product = await productService.getProductBySlug(req.params.slug)
+  const product = await productService.getProductBySlug(req.params.slug as string)
   res.json({ success: true, data: product })
 }
 
@@ -56,7 +56,7 @@ export async function getById(
   req: Request,
   res: Response
 ): Promise<void> {
-  const product = await productService.getProductById(req.params.id)
+  const product = await productService.getProductById(req.params.id as string)
   res.json({ success: true, data: product })
 }
 
@@ -64,7 +64,7 @@ export async function getFeatured(
   req: Request,
   res: Response
 ): Promise<void> {
-  const limit    = parseInt((req.query.limit as string) || '8')
+  const limit = parseInt((req.query.limit as string) || '8')
   const products = await productService.getFeaturedProducts(limit)
   res.json({ success: true, data: products })
 }
@@ -73,7 +73,7 @@ export async function getNewArrivals(
   req: Request,
   res: Response
 ): Promise<void> {
-  const limit    = parseInt((req.query.limit as string) || '8')
+  const limit = parseInt((req.query.limit as string) || '8')
   const products = await productService.getNewArrivals(limit)
   res.json({ success: true, data: products })
 }
@@ -82,7 +82,7 @@ export async function getRelated(
   req: Request,
   res: Response
 ): Promise<void> {
-  const product = await productService.getProductById(req.params.id)
+  const product = await productService.getProductById(req.params.id as string)
   const related = await productService.getRelatedProducts(
     product.id,
     product.categoryId,
@@ -96,7 +96,7 @@ export async function create(
   res: Response
 ): Promise<void> {
   console.log('CREATE PRODUCT BODY:', JSON.stringify(req.body, null, 2))
-  const body    = productSchema.parse(req.body)
+  const body = productSchema.parse(req.body)
   const product = await productService.createProduct(body)
   res.status(201).json({ success: true, data: product })
 }
@@ -105,8 +105,8 @@ export async function update(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const body    = productSchema.partial().parse(req.body)
-  const product = await productService.updateProduct(req.params.id, body)
+  const body = productSchema.partial().parse(req.body)
+  const product = await productService.updateProduct(req.params.id as string, body)
   res.json({ success: true, data: product })
 }
 
@@ -114,7 +114,7 @@ export async function remove(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  await productService.softDeleteProduct(req.params.id)
+  await productService.softDeleteProduct(req.params.id as string)
   res.json({ success: true, message: 'Product deactivated' })
 }
 
@@ -135,11 +135,11 @@ export async function uploadImages(
     // Force clean extension based on mimetype
     const extMap: Record<string, string> = {
       'image/jpeg': '.jpg',
-      'image/jpg':  '.jpg',
-      'image/png':  '.png',
+      'image/jpg': '.jpg',
+      'image/png': '.png',
       'image/webp': '.webp',
     }
-    const ext      = extMap[file.mimetype] || '.jpg'
+    const ext = extMap[file.mimetype] || '.jpg'
     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`
     const filePath = `products/${filename}`
 
@@ -147,7 +147,7 @@ export async function uploadImages(
       .from('images')
       .upload(filePath, file.buffer, {
         contentType: 'image/jpeg',
-        upsert:      false,
+        upsert: false,
       })
 
     if (error) {
