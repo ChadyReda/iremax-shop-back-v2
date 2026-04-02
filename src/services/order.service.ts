@@ -5,44 +5,44 @@ import { generateOrderNumber } from '../utils/orderNumber'
 import { OrderStatus } from '../types'
 
 const FREE_SHIPPING_AT = 100
-const SHIPPING_COST    = 9.99
-const TAX_RATE         = 0.08
+const SHIPPING_COST = 9.99
+const TAX_RATE = 0.08
 
 const ORDER_INCLUDE = {
-  items:           true,
+  items: true,
   shippingAddress: true,
   user: {
     select: {
-      id:        true,
+      id: true,
       firstName: true,
-      lastName:  true,
-      email:     true,
+      lastName: true,
+      email: true,
     },
   },
 }
 
 export async function createOrder(input: {
-  userId?:         string
-  guestEmail?:     string
+  userId?: string
+  guestEmail?: string
   items: {
-    productId:  string
+    productId: string
     variantSku: string
-    quantity:   number
+    quantity: number
   }[]
   shippingAddress: {
-    firstName:  string
-    lastName:   string
-    phone?:     string
-    street:     string
+    firstName: string
+    lastName: string
+    phone?: string
+    street: string
     apartment?: string
-    city:       string
-    state:      string
-    zip:        string
-    country:    string
+    city: string
+    state: string
+    zip: string
+    country: string
   }
   paymentMethod?: string
-  couponCode?:    string
-  notes?:         string
+  couponCode?: string
+  notes?: string
 }) {
   if (!input.userId && !input.guestEmail) {
     throw new AppError('Guest email is required for guest checkout', 400)
@@ -52,7 +52,7 @@ export async function createOrder(input: {
   const orderItems = await Promise.all(
     input.items.map(async ({ productId, variantSku, quantity }) => {
       const product = await prisma.product.findUnique({
-        where:   { id: productId },
+        where: { id: productId },
         include: { images: true, variants: true },
       })
 
@@ -78,22 +78,22 @@ export async function createOrder(input: {
 
       return {
         productId,
-        name:         product.name,
-        image:        primaryImage,
-        price:        Number(product.price) + Number(variant.additionalPrice),
+        name: product.name,
+        image: primaryImage,
+        price: Number(product.price) + Number(variant.additionalPrice),
         quantity,
         variantSku,
         variantLabel: variantParts.join(' / ') || variantSku,
-        _variantId:   variant.id,
+        _variantId: variant.id,
       }
     })
   )
 
   // Calculate totals
-  const subtotal    = +orderItems.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)
+  const subtotal = +orderItems.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)
   const shippingCost = subtotal >= FREE_SHIPPING_AT ? 0 : SHIPPING_COST
-  const tax         = +(subtotal * TAX_RATE).toFixed(2)
-  const total       = +(subtotal + shippingCost + tax).toFixed(2)
+  const tax = +(subtotal * TAX_RATE).toFixed(2)
+  const total = +(subtotal + shippingCost + tax).toFixed(2)
 
   // Create order in transaction
   const order = await prisma.$transaction(async (tx) => {
@@ -102,7 +102,7 @@ export async function createOrder(input: {
       orderItems.map(({ _variantId, quantity }) =>
         tx.productVariant.update({
           where: { id: _variantId },
-          data:  { stock: { decrement: quantity } },
+          data: { stock: { decrement: quantity } },
         })
       )
     )
@@ -112,7 +112,7 @@ export async function createOrder(input: {
       input.items.map(({ productId, quantity }) =>
         tx.product.update({
           where: { id: productId },
-          data:  { totalSold: { increment: quantity } },
+          data: { totalSold: { increment: quantity } },
         })
       )
     )
@@ -120,19 +120,19 @@ export async function createOrder(input: {
     // Create order
     const newOrder = await tx.order.create({
       data: {
-        orderNumber:  generateOrderNumber(),
-        userId:       input.userId || null,
-        guestEmail:   input.guestEmail,
+        orderNumber: generateOrderNumber(),
+        userId: input.userId || null,
+        guestEmail: input.guestEmail,
         subtotal,
         shippingCost,
         tax,
-        discount:     0,
+        discount: 0,
         total,
         paymentMethod: input.paymentMethod || 'card',
         paymentStatus: 'PAID',
-        status:        'PENDING',
-        couponCode:    input.couponCode,
-        notes:         input.notes,
+        status: 'PENDING',
+        couponCode: input.couponCode,
+        notes: input.notes,
         shippingAddress: {
           create: input.shippingAddress,
         },
@@ -161,16 +161,16 @@ export async function createOrder(input: {
 
 export async function getUserOrders(
   userId: string,
-  query:  { page?: string; limit?: string }
+  query: { page?: string; limit?: string }
 ) {
   const { page, limit, skip } = parsePage(query)
 
   const [orders, total] = await prisma.$transaction([
     prisma.order.findMany({
-      where:   { userId },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       skip,
-      take:    limit,
+      take: limit,
       include: ORDER_INCLUDE,
     }),
     prisma.order.count({ where: { userId } }),
@@ -181,7 +181,7 @@ export async function getUserOrders(
 
 export async function getOrderById(id: string, userId?: string) {
   const order = await prisma.order.findUnique({
-    where:   { id },
+    where: { id },
     include: ORDER_INCLUDE,
   })
 
@@ -195,8 +195,8 @@ export async function getOrderById(id: string, userId?: string) {
 }
 
 export async function adminListOrders(query: {
-  page?:   string
-  limit?:  string
+  page?: string
+  limit?: string
   status?: string
   search?: string
 }) {
@@ -207,7 +207,7 @@ export async function adminListOrders(query: {
   if (query.search) {
     where.OR = [
       { orderNumber: { contains: query.search, mode: 'insensitive' } },
-      { guestEmail:  { contains: query.search, mode: 'insensitive' } },
+      { guestEmail: { contains: query.search, mode: 'insensitive' } },
     ]
   }
 
@@ -216,7 +216,7 @@ export async function adminListOrders(query: {
       where,
       orderBy: { createdAt: 'desc' },
       skip,
-      take:    limit,
+      take: limit,
       include: ORDER_INCLUDE,
     }),
     prisma.order.count({ where }),
@@ -227,8 +227,8 @@ export async function adminListOrders(query: {
 
 export async function updateOrderStatus(id: string, status: OrderStatus) {
   return prisma.order.update({
-    where:   { id },
-    data:    { status },
+    where: { id },
+    data: { status },
     include: ORDER_INCLUDE,
   })
 }

@@ -14,8 +14,8 @@ if (err instanceof ZodError) {
   res.status(422).json({
     success: false,
     message: 'Validation failed',
-    errors:  (err.issues || err.errors || []).map((e: any) => ({
-      field:   e.path?.join('.') || '',
+    errors: err.issues.map((e) => ({
+      field: e.path.join('.') || '',
       message: e.message,
     })),
   })
