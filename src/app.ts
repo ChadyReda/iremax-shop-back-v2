@@ -14,15 +14,15 @@ const app = express()
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy:     false,
+    contentSecurityPolicy: false,
   })
 )
 
 app.use(
   cors({
-    origin:      config.clientOrigin,
+    origin: config.clientOrigin,
     credentials: true,
-    methods:     ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 )
@@ -43,7 +43,7 @@ app.use(
   })
 )
 
-app.use('/api', routes)
+app.use('/', routes)
 
 // 404 handler
 app.use((_req, res) => {
