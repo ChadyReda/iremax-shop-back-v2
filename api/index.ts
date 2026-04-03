@@ -48,7 +48,7 @@ app.use(
 )
 
 // Main Routes
-app.use('/', routes)
+app.use('/api', routes)
 
 // 404 handler
 app.use((_req, res) => {
